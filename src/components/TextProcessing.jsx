@@ -254,7 +254,7 @@ const TextProcessing = () => {
   // Theme classes
   const themeClasses = {
     background: darkMode ? 'bg-gray-900' : 'bg-text-color',
-    card: darkMode ? 'bg-gray-800' : 'bg-white',
+    card: darkMode ? 'bg-gray-800' : 'bg-[#f5f5f5]',
     text: darkMode ? 'text-gray-100' : 'text-gray-900',
     input: darkMode ? 'bg-gray-700 text-gray-100 placeholder-gray-400' : 'bg-gray-100 text-gray-900 placeholder-gray-500',
     button: darkMode ? 'bg-teal-500 hover:bg-teal-600 text-white' : 'bg-teal-500 hover:bg-teal-600 text-white',
@@ -265,11 +265,11 @@ const TextProcessing = () => {
   };
 
   return (
-    <div className={`h-auto mt-2 ${themeClasses.background} flex flex-col transition-colors duration-300 w-3/4 max-w-xl rounded-xl`}>
+    <div className={`h-auto mx-auto ${themeClasses.background} flex flex-col transition-colors duration-300 rounded-xl`}>
       {/* Header */}
       <header className={`${themeClasses.card} py-4 px-6 shadow-lg`}>
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <h1 className={`text-2xl font-bold ${themeClasses.text}`}>AI Text Processor</h1>
+          <h1 className='bg-gradient-to-r from-purple-600 via-green-900 to-cyan-600 bg-clip-text text-transparent text-3xl font-semibold'>AI Text Processor</h1>
           <button
             className={`p-2 rounded-lg ${themeClasses.button} transition-transform hover:scale-105`}
             onClick={toggleTheme}
@@ -384,7 +384,7 @@ const TextProcessing = () => {
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Type or paste text here..."
               disabled={isProcessing}
-              className={`flex-1 p-3 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 ${themeClasses.input}`}
+              className={`flex-1 p-3 border border-gray-400 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 ${themeClasses.input}`}
               aria-label="Input text for processing"
             />
             <button
