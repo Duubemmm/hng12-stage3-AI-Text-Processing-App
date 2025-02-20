@@ -8,19 +8,20 @@ const languageMap = {
   'fr': 'French',
   'pt': 'Portuguese',
   'ru': 'Russian',
+  'tr': 'Turkish',
 };
 
 const TextProcessing = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
-  const [targetLanguage, setTargetLanguage] = useState('fr'); // Default to French
+  const [targetLanguage, setTargetLanguage] = useState('en'); // Default to English
   const [isProcessing, setIsProcessing] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [error, setError] = useState('');
   const [showDropdown, setShowDropdown] = useState({}); // Tracks visibility of dropdown per message
   const messagesEndRef = useRef(null);
-
   console.log(setTargetLanguage);
+
   // Auto-scroll to the newest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -70,7 +71,7 @@ const TextProcessing = () => {
     }
   };
 
-  // Summarize text (mock implementation)
+  // Summarize text using Chrome AI Summarizer API
   const summarizeText = async (text) => {
     if (!text.trim()) {
       setError('Input text cannot be empty.');
@@ -78,9 +79,36 @@ const TextProcessing = () => {
     }
 
     try {
-      const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
-      if (sentences.length <= 3) return text;
-      return sentences.slice(0, 3).join(' ') + '...';
+      // Check if the Summarizer API is available
+      const available = (await self.ai.summarizer.capabilities()).available;
+      if (available === 'no') {
+        setError('Summarization is not available on this device.');
+        return '';
+      }
+
+      // Initialize the summarizer
+      const options = {
+        type: 'key-points', // Default: 'key-points'
+        format: 'markdown', // Default: 'markdown'
+        length: 'medium',   // Default: 'medium'
+      };
+
+      let summarizer;
+      if (available === 'readily') {
+        summarizer = await self.ai.summarizer.create(options);
+      } else {
+        summarizer = await self.ai.summarizer.create(options);
+        summarizer.addEventListener('downloadprogress', (e) => {
+          console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+        });
+        await summarizer.ready;
+      }
+
+      // Perform summarization
+      const summary = await summarizer.summarize(text, {
+        context: 'This is a user-generated text.',
+      });
+      return summary;
     } catch (error) {
       console.error('Summarization error:', error);
       setError('Failed to summarize text. Please try again.');
@@ -118,16 +146,24 @@ const TextProcessing = () => {
       if (!detected) return;
 
       // Update message with language detection
+      const updatedMessage = {
+        id: messageId,
+        type: 'user',
+        text: inputText,
+        timestamp: new Date(),
+        pending: false,
+        language: detected,
+      };
+
+      // Automatically summarize if text is in English and > 150 characters
+      if (detected.code === 'en' && inputText.length > 150) {
+        const summary = await summarizeText(inputText);
+        updatedMessage.summary = summary;
+      }
+
+      // Update messages
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId
-            ? {
-                ...msg,
-                pending: false,
-                language: detected,
-              }
-            : msg
-        )
+        prev.map((msg) => (msg.id === messageId ? updatedMessage : msg))
       );
     } catch (error) {
       console.error('Error processing message:', error);
@@ -217,7 +253,7 @@ const TextProcessing = () => {
 
   // Theme classes
   const themeClasses = {
-    background: darkMode ? 'bg-gray-900' : 'bg-[#ded2c9]',
+    background: darkMode ? 'bg-gray-900' : 'bg-text-color',
     card: darkMode ? 'bg-gray-800' : 'bg-white',
     text: darkMode ? 'text-gray-100' : 'text-gray-900',
     input: darkMode ? 'bg-gray-700 text-gray-100 placeholder-gray-400' : 'bg-gray-100 text-gray-900 placeholder-gray-500',
@@ -229,7 +265,7 @@ const TextProcessing = () => {
   };
 
   return (
-    <div className={`h-auto ${themeClasses.background} flex flex-col transition-colors duration-300 w-3/4 max-w-xl rounded-lg shadow-xl`}>
+    <div className={`h-auto mt-2 ${themeClasses.background} flex flex-col transition-colors duration-300 w-3/4 max-w-xl rounded-xl`}>
       {/* Header */}
       <header className={`${themeClasses.card} py-4 px-6 shadow-lg`}>
         <div className="max-w-4xl mx-auto flex justify-between items-center">
@@ -279,14 +315,16 @@ const TextProcessing = () => {
                 {/* Action buttons */}
                 {!message.pending && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleSummarize(message.id)}
-                      disabled={isProcessing}
-                      className={`px-3 py-1 text-sm rounded-lg ${themeClasses.button} disabled:opacity-50`}
-                      aria-label="Summarize message"
-                    >
-                      Summarize
-                    </button>
+                    {message.summary && (
+                      <button
+                        onClick={() => handleSummarize(message.id)}
+                        disabled={isProcessing}
+                        className={`px-3 py-1 text-sm rounded-lg ${themeClasses.button} disabled:opacity-50`}
+                        aria-label="Summarize message"
+                      >
+                        Summarize
+                      </button>
+                    )}
                     <button
                       onClick={() => setShowDropdown((prev) => ({ ...prev, [message.id]: !prev[message.id] }))}
                       disabled={isProcessing}
