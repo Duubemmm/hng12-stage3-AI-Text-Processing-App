@@ -49,7 +49,7 @@ const LandingPage = () => {
           </p>
           <button 
         onClick={() => navigate("/text-processing")} 
-        className="mt-4 w-3/12 mx-auto p-2 bg-teal-500 hover:bg-teal-600 text-white font-semibold flex items-center justify-center rounded transition"
+        className="mt-4 mx-auto p-2 bg-teal-500 hover:bg-teal-600 text-white font-semibold flex items-center justify-center rounded transition sm:w-8/12 md:w-6/12 lg:w-4/12 xl:w-3/12 "
       >
         Try It Now <ChevronRight className="ml-2" size={20} />
       </button>
